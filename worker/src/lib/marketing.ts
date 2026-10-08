@@ -33,7 +33,7 @@ export async function sendMarketingNotice(env: Env, base: string, acc: { id: str
     appUrl: base ? `${base}/app.html` : "",
     offUrl,
   });
-  await sendMail(env, acc.email, m.subject, m.text);
+  await sendMail(env, acc.email, m.subject, m.text, { unsubscribeUrl: offUrl });
 }
 
 /**

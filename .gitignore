@@ -11,3 +11,5 @@ secrets/
 *.log
 .DS_Store
 worker/worker-configuration.d.ts
+# 운영 배포 설정 (실제 database_id, 운영 주소). 저장소에는 wrangler.toml 만 둔다
+wrangler.prod.toml

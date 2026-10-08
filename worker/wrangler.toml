@@ -33,6 +33,9 @@ OPERATOR_NAME = "Define404"
 APP_URL = ""
 # 설치·맞춤 제작 문의 버튼이 여는 주소
 CTA_URL = "https://contact.define404.com"
+# 동의 문구와 바닥글의 "개인정보 처리방침" 링크. 직접 설치해 운영하면 내 처리방침 주소로 바꾼다
+PRIVACY_URL = "https://contact.define404.com/privacy.html"
+# 보내는 메일 주소. Gmail API 를 쓰면 그 Google 계정 주소, Resend 를 쓰면 Resend 에 등록한 도메인 주소
 MAIL_FROM = "견적냥 <onboarding@resend.dev>"
 # 1이면 메일 키가 없을 때 로그인 링크를 응답에 담는다. 로컬 시험 전용, 운영에서는 반드시 0
 DEV_MODE = "0"

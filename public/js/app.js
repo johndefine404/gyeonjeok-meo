@@ -14,7 +14,13 @@ const when = (iso) => {
 };
 
 async function start() {
-  fetch("/api/config").then((r) => r.json()).then((c) => document.querySelectorAll("[data-cta]").forEach((a) => (a.href = c.ctaUrl))).catch(() => {});
+  fetch("/api/config")
+    .then((r) => r.json())
+    .then((c) => {
+      document.querySelectorAll("[data-cta]").forEach((a) => (a.href = c.ctaUrl));
+      if (c.privacyUrl) document.querySelectorAll("[data-privacy]").forEach((a) => (a.href = c.privacyUrl));
+    })
+    .catch(() => {});
   const me = await api("/api/me");
   if (!me.login) {
     $("#login").hidden = false;

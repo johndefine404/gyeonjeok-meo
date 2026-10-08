@@ -53,10 +53,13 @@ worker/            Cloudflare Worker (Hono) + D1
   src/routes/pages.ts  공유 견적서, 인쇄용 문서, 견적 요청 페이지, 로그인 확인, 광고 수신 거부 링크
   src/lib/consent.ts   광고 수신 동의 2년 만료, 보관 기간, 처리 결과 메일 문구
   src/lib/marketing.ts 수신 동의 저장, 수신 거부 토큰, 매일 정리 작업
+  src/lib/mail.ts      메일 발송 (Gmail API 또는 Resend)
+  src/lib/mime.ts      메일 원문(MIME) 만들기
   migrations/          D1 스키마
 test/
   core.test.mjs    단위 시험
   consent.test.mjs 광고 수신 동의 2년 만료, 처리 결과 메일 문구 시험
+  mail.test.mjs    메일 원문 시험 (한글 제목, 일반 글과 HTML 두 부분)
   e2e-local.mjs    로컬 통합 시험
 ```
 
@@ -66,7 +69,7 @@ test/
 
 - Cloudflare 무료 계정
 - Node.js 20 이상
-- (메일) Resend 계정. 넣지 않으면 메일 대신 로그에 찍힙니다. 이때는 로그인 링크도 메일로 가지 않으므로 운영에서는 필수입니다
+- (메일) Google Workspace(Gmail API) 또는 Resend 중 하나. 둘 다 넣지 않으면 메일 대신 로그에 찍힙니다. 이때는 로그인 링크도 메일로 가지 않으므로 운영에서는 필수입니다
 
 ### 2. 배포
 
@@ -76,11 +79,37 @@ npm install
 npx wrangler login
 npx wrangler d1 create gyeonjeok-meo          # 나온 database_id 를 wrangler.toml 에 넣습니다
 npx wrangler d1 migrations apply gyeonjeok-meo --remote
-npx wrangler secret put RESEND_API_KEY
+# 메일: Gmail API 를 쓰면 아래 세 값 (아래 "메일 보내기" 참고)
+npx wrangler secret put GMAIL_CLIENT_ID
+npx wrangler secret put GMAIL_CLIENT_SECRET
+npx wrangler secret put GMAIL_REFRESH_TOKEN
+# 또는 Resend 를 쓰면
+# npx wrangler secret put RESEND_API_KEY
 npx wrangler deploy
 ```
 
-`wrangler.toml`의 `MAIL_FROM`은 Resend에 등록한 도메인 주소로 바꿉니다. `DEV_MODE`는 운영에서 반드시 `"0"`입니다.
+`wrangler.toml`의 `MAIL_FROM`은 보내는 주소로 바꿉니다 (Gmail API 면 그 Google 계정 주소, Resend 면 등록한 도메인 주소). `PRIVACY_URL`은 내 개인정보 처리방침 주소로 바꿉니다. `DEV_MODE`는 운영에서 반드시 `"0"`입니다.
+
+운영 주소(`APP_URL`), 실제 `database_id`, 내 도메인 연결(`routes`)은 저장소에 올리지 않는 `wrangler.prod.toml`에 따로 두고 `npx wrangler deploy --config wrangler.prod.toml`로 배포해도 됩니다 (`.gitignore`에 들어 있습니다).
+
+### 3. 메일 보내기
+
+`GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN` 세 값이 모두 있으면 Gmail API로 보내고, 없으면 `RESEND_API_KEY`가 있을 때 Resend로 보냅니다. 둘 다 없으면 로그에만 찍습니다.
+
+Gmail API (Google Workspace 계정) 준비:
+
+1. Google Cloud 콘솔에서 프로젝트를 만들고 Gmail API를 켭니다
+2. OAuth 동의 화면을 만듭니다. Workspace 계정이면 사용자 유형을 "내부"로 두면 검수 없이 씁니다
+3. "사용자 인증 정보"에서 OAuth 클라이언트 ID를 "데스크톱 앱"으로 만듭니다. 여기서 나온 클라이언트 ID와 보안 비밀이 `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`입니다
+4. 보내는 계정으로 로그인해 범위 `https://www.googleapis.com/auth/gmail.send` 하나만 허용하고 리프레시 토큰을 받습니다. 예: Google의 OAuth 2.0 Playground에서 톱니바퀴의 "Use your own OAuth credentials"에 위 두 값을 넣고, 범위에 `gmail.send`만 넣어 승인한 뒤 "Exchange authorization code for tokens"를 누르면 나오는 refresh token
+5. 세 값을 `npx wrangler secret put` 으로 넣습니다. 화면에 찍거나 저장소에 올리지 않습니다
+6. `MAIL_FROM`은 `견적냥 <그 계정 주소>` 형식으로 둡니다
+
+Worker는 리프레시 토큰으로 액세스 토큰을 받아 만료 전까지 메모리에 두고, `gmail/v1/users/me/messages/send`로 메일 원문(MIME, 본문은 일반 글과 HTML 두 가지, 한글 제목 인코딩)을 보냅니다. 광고 수신 동의 처리 결과 메일에는 `List-Unsubscribe`, `List-Unsubscribe-Post`(한 번 누르면 끝나는 수신 거부) 머리글을 붙입니다.
+
+## A4 미리보기
+
+화면 미리보기는 A4 문서를 화면 폭에 맞춰 줄여 보여 줍니다. 폭이 600px보다 좁은 휴대폰에서는 미리보기 위에 "크게 보기" 버튼이 나오고, 누르면 문서를 원래 크기로 보여 주며 문서 상자 안에서만 옆으로 밀어 볼 수 있습니다 (페이지 전체는 옆으로 넘치지 않습니다). 인쇄와 PDF 서식은 바뀌지 않습니다.
 
 ## 로컬에서 시험하기
 
@@ -107,9 +136,11 @@ node ../test/e2e-local.mjs http://localhost:8787
 | `CTA_URL` | vars | "설치·맞춤 제작 문의" 버튼 주소이자 안내 메일의 연락처 (기본값 https://contact.define404.com) |
 | `OPERATOR_NAME` | vars | 광고성 정보 수신 동의를 받는 곳, 동의 처리 결과 메일의 보낸 곳 (기본값 Define404) |
 | `APP_URL` | vars | 운영 주소. 정기 작업이 보내는 메일(2년 만료 알림)의 링크에 씁니다. 비우면 링크 없이 보냅니다 |
-| `MAIL_FROM` | vars | 보내는 메일 주소 (Resend) |
+| `PRIVACY_URL` | vars | 동의 문구와 바닥글의 "개인정보 처리방침" 링크 (기본값 https://contact.define404.com/privacy.html) |
+| `MAIL_FROM` | vars | 보내는 메일 주소. 표시 이름은 서비스 이름 |
 | `DEV_MODE` | vars | 로컬 시험 전용. 운영은 `"0"` |
-| `RESEND_API_KEY` | secret | 로그인 링크, 견적 요청, 견적 수락, 수신 동의 처리 결과 메일 |
+| `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN` | secret | Gmail API 메일 발송 (셋 다 있으면 먼저 씁니다). 범위는 `gmail.send` 하나 |
+| `RESEND_API_KEY` | secret | Gmail 값이 없을 때 쓰는 Resend 메일 발송 |
 
 ## 보안
 
@@ -145,11 +176,12 @@ node ../test/e2e-local.mjs http://localhost:8787
 - 지금 이 도구가 보내는 메일(로그인 링크, 견적 요청·수락 알림, 동의 처리 결과)에는 광고가 없습니다. 화면의 "설치·맞춤 제작 문의" 버튼은 메일이 아닙니다
 - 나중에 광고 메일을 보낸다면 지켜야 할 것: 수신 동의가 유효한 계정(`marketingActive`, 메일 인증을 마친 계정)에만, 제목 맨 앞에 "(광고)", 본문에 보낸 곳(Define404)과 연락처(https://contact.define404.com), 수신 거부 링크, 밤 9시부터 아침 8시(한국 시간) 사이에는 보내지 않기 (망법 제50조 제3항·제4항)
 - 견적 요청 페이지로 받은 개인정보를 처리하는 주체는 그 페이지의 사업자입니다
-- 운영하는 쪽은 개인정보 처리방침에 수집 항목, 보유 기간, 위탁 업체(Cloudflare, Resend)를 적어 두어야 합니다. 이 저장소에는 처리방침 문서가 없습니다
+- 운영하는 쪽은 개인정보 처리방침에 수집 항목, 보유 기간, 위탁 업체(Cloudflare, 메일 발송 업체)를 적어 두어야 합니다. 이 저장소에는 처리방침 문서가 없고, 화면의 동의 문구와 바닥글은 `PRIVACY_URL`의 처리방침으로 연결합니다. 기본값은 Define404 운영본의 처리방침이라 직접 설치하면 바꿔야 합니다
+- 동의 문구에는 처리 위탁·국외 이전(서버와 저장은 Cloudflare, Inc., 메일 발송은 Google LLC, 둘 다 미국)을 적었습니다. Resend를 쓰면 이 줄도 고칩니다
 
 ## 아직 하지 않은 것
 
-- 실제 Cloudflare 배포와 Resend 실발송은 시험하지 않았습니다 (로컬 `wrangler dev`와 D1 로컬 모드에서만 시험)
+- 실제 Cloudflare 배포는 아직 하지 않았습니다 (로컬 `wrangler dev`와 D1 로컬 모드에서 시험). Gmail API 실발송은 로컬 Worker에서 확인했고, Resend 실발송은 시험하지 않았습니다
 - 사업자 한 계정에 사업자 정보 하나만 둡니다
 - 견적 요청 페이지 주소는 무작위입니다. 원하는 주소로 바꾸는 기능은 없습니다
 - 견적서 수정은 없습니다. 고친 견적서는 새 번호로 다시 저장합니다
@@ -164,4 +196,4 @@ node ../test/e2e-local.mjs http://localhost:8787
 
 ## English
 
-견적냥 (gyeonjeok-meo) is an open-source Korean quote (견적서) generator for sole proprietors, small businesses and freelancers. It validates the Korean business registration number checksum, computes VAT (exclusive/inclusive), simplified-taxpayer totals and the 3.3% freelancer withholding with configurable rounding, writes the amount in Korean words ("일금 ○○원정"), and prints a single A4 page via CSS `@page` (save as PDF from the browser). Signed-up users get share links with an "accept" button and a per-business quote request page that collects client leads with consent. Passwordless email login (magic link), hashed tokens, per-account scoping (no IDOR), rate limits. Runs on Cloudflare Workers (Hono) + D1. Tax rules are assumptions, not tax advice. MIT licensed.
+견적냥 (gyeonjeok-meo) is an open-source Korean quote (견적서) generator for sole proprietors, small businesses and freelancers. It validates the Korean business registration number checksum, computes VAT (exclusive/inclusive), simplified-taxpayer totals and the 3.3% freelancer withholding with configurable rounding, writes the amount in Korean words ("일금 ○○원정"), and prints a single A4 page via CSS `@page` (save as PDF from the browser). Signed-up users get share links with an "accept" button and a per-business quote request page that collects client leads with consent. Passwordless email login (magic link), hashed tokens, per-account scoping (no IDOR), rate limits. Runs on Cloudflare Workers (Hono) + D1. Mail goes through the Gmail API (Google Workspace, send-only OAuth refresh token) or Resend. Tax rules are assumptions, not tax advice. MIT licensed.

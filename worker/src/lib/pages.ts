@@ -3,7 +3,22 @@ import { esc } from "../../../public/js/core.js";
 
 const PRETENDARD = "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css";
 
-export function page(opts: { title: string; body: string; css?: string[]; js?: string[]; bodyClass?: string; noindex?: boolean }): string {
+/** 개인정보 처리방침 주소 (vars 의 PRIVACY_URL, 비우면 Define404 처리방침) */
+export const DEFAULT_PRIVACY_URL = "https://contact.define404.com/privacy.html";
+export const privacyUrl = (env: { PRIVACY_URL?: string }) => env.PRIVACY_URL || DEFAULT_PRIVACY_URL;
+
+// 배포마다 하나로 정해지는 설정 값이라 요청마다 같은 값을 넣는다 (index.ts 첫 미들웨어)
+let privacy = DEFAULT_PRIVACY_URL;
+export function setPrivacyUrl(url: string) {
+  privacy = url;
+}
+export const privacyLink = () => `<a href="${esc(privacy)}" data-privacy>개인정보 처리방침</a>`;
+
+/** 동의 문구에 넣는 처리 위탁·국외 이전 안내 한 줄 */
+export const entrustLine = () =>
+  `<p>처리 위탁·국외 이전: 서버 운영과 데이터 저장은 Cloudflare, Inc.(미국), 알림 메일 발송은 Google LLC(미국)에 맡깁니다. 자세한 내용은 ${privacyLink()}을 확인해 주세요.</p>`;
+
+export function page(opts: { title: string; body: string; css?: string[]; js?: string[]; bodyClass?: string; noindex?: boolean; footer?: string }): string {
   const css = ["/css/site.css", ...(opts.css ?? [])].map((h) => `<link rel="stylesheet" href="${h}">`).join("\n");
   const js = (opts.js ?? []).map((s) => `<script src="${s}" type="module"></script>`).join("\n");
   return `<!doctype html>
@@ -20,6 +35,7 @@ ${css}
 </head>
 <body class="${esc(opts.bodyClass ?? "")}">
 ${opts.body}
+<footer class="wrap made-with no-print">${opts.footer ? `<span>${opts.footer}</span>` : ""}<span>${privacyLink()}</span></footer>
 ${js}
 </body>
 </html>`;

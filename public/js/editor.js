@@ -349,7 +349,10 @@ update();
 
 fetch("/api/config")
   .then((r) => r.json())
-  .then((c) => document.querySelectorAll("[data-cta]").forEach((a) => (a.href = c.ctaUrl)))
+  .then((c) => {
+    document.querySelectorAll("[data-cta]").forEach((a) => (a.href = c.ctaUrl));
+    if (c.privacyUrl) document.querySelectorAll("[data-privacy]").forEach((a) => (a.href = c.privacyUrl));
+  })
   .catch(() => {});
 
 fetch("/api/me")

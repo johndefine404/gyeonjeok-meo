@@ -4,7 +4,7 @@ import { Hono } from "hono";
 import type { AppEnv, Env } from "./env";
 import { loadAccount } from "./lib/auth";
 import { dailyCleanup } from "./lib/marketing";
-import { notFoundPage } from "./lib/pages";
+import { notFoundPage, privacyUrl, setPrivacyUrl } from "./lib/pages";
 import api from "./routes/api";
 import pages from "./routes/pages";
 
@@ -24,6 +24,7 @@ const CSP = [
 
 // 보안 헤더. 공유 링크 주소가 다른 사이트로 새지 않게 Referrer 를 막는다
 app.use("*", async (c, next) => {
+  setPrivacyUrl(privacyUrl(c.env));
   await next();
   c.header("Content-Security-Policy", CSP);
   c.header("X-Content-Type-Options", "nosniff");

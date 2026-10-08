@@ -4,9 +4,9 @@ import type { AppEnv, Env } from "../env";
 import { calcQuote, checkQuote, digitsOnly, normalizeQuote, renderQuoteHtml, validateBizNo, won } from "../../../public/js/core.js";
 import { createLoginToken, logout, requireAccount } from "../lib/auth";
 import { marketingActive } from "../lib/consent";
-import { sendMail } from "../lib/mail";
+import { mailProvider, sendMail } from "../lib/mail";
 import { sendMarketingNotice, setMarketing } from "../lib/marketing";
-import { page } from "../lib/pages";
+import { page, privacyUrl } from "../lib/pages";
 import { clean, EMAIL_RE, ID_RE, kstText, kstYmd, nowIso, randomId, randomSlug, sha256, SLUG_RE } from "../lib/util";
 
 const api = new Hono<AppEnv>();
@@ -63,7 +63,7 @@ api.post("/auth/start", async (c) => {
   const text = `아래 링크를 누르면 로그인됩니다. 20분 동안 한 번만 쓸 수 있습니다.\n\n${link}\n\n요청하지 않았다면 이 메일을 지워 주세요.`;
   await sendMail(c.env, email, `[${c.env.APP_NAME}] 로그인 링크`, text);
 
-  const dev = c.env.DEV_MODE === "1" && !c.env.RESEND_API_KEY;
+  const dev = c.env.DEV_MODE === "1" && mailProvider(c.env) === "log";
   return c.json({ ok: true, message: "메일로 로그인 링크를 보냈습니다", ...(dev ? { devLink: link } : {}) });
 });
 
@@ -418,6 +418,6 @@ api.delete("/requests/:id", async (c) => {
   return r.meta.changes ? c.json({ ok: true }) : c.json({ error: "not found" }, 404);
 });
 
-api.get("/config", (c) => c.json({ appName: c.env.APP_NAME, ctaUrl: c.env.CTA_URL }));
+api.get("/config", (c) => c.json({ appName: c.env.APP_NAME, ctaUrl: c.env.CTA_URL, privacyUrl: privacyUrl(c.env) }));
 
 export default api;

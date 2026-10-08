@@ -5,7 +5,7 @@ import { esc, normalizeQuote, renderQuoteHtml } from "../../../public/js/core.js
 import { consumeLoginToken } from "../lib/auth";
 import { marketingActive } from "../lib/consent";
 import { sendMarketingNotice, setMarketing } from "../lib/marketing";
-import { notFoundPage, page } from "../lib/pages";
+import { entrustLine, notFoundPage, page } from "../lib/pages";
 import { ID_RE, kstText, SLUG_RE, TOKEN_RE } from "../lib/util";
 import { printPage } from "./api";
 
@@ -54,8 +54,8 @@ pages.get("/q/:id", async (c) => {
   <div class="sheet-scroll"><div class="sheet">${renderQuoteHtml(q, { acceptedAt: r.acceptedAt, acceptedName: r.acceptedName })}</div></div>
   <aside class="share-side no-print">${acceptBox}
   <p class="sub small">다른 견적도 받아 보고 싶다면 <a href="/r/${esc(r.slug)}">${esc(q.supplier.name)}에 견적 요청하기</a></p></aside>
-</main>
-<footer class="wrap made-with no-print"><a href="/">견적냥</a>으로 만든 문서입니다. 가입 없이 무료로 만들 수 있습니다.</footer>`,
+</main>`,
+      footer: `<a href="/">견적냥</a>으로 만든 문서입니다. 가입 없이 무료로 만들 수 있습니다.`,
     }),
   );
 });
@@ -92,14 +92,15 @@ pages.get("/r/:slug", async (c) => {
       <p>수집 항목: 이름 또는 회사명, 연락처, 요청 내용. 요청 남용을 막으려고 접속 IP는 원문이 아닌 해시값으로만 둡니다</p>
       <p>받는 곳: ${esc(b.name)}</p>
       <p>보유·이용 기간: 접수일로부터 1년이 지나면 자동으로 지웁니다. 그 전에도 ${esc(b.name)}이(가) 지우거나 탈퇴하면 바로 지웁니다</p>
+      ${entrustLine()}
       <p>동의하지 않으셔도 됩니다. 다만 동의하지 않으면 이 페이지로 견적 요청을 보낼 수 없습니다.</p>
       <label class="check"><input type="checkbox" name="consent" required> 위 내용에 동의합니다</label>
     </fieldset>
     <button class="btn" type="submit">견적 요청 보내기</button>
     <p class="msg" role="status"></p>
   </form>
-</main>
-<footer class="wrap made-with"><a href="/">견적냥</a>으로 만든 요청 페이지입니다.</footer>`,
+</main>`,
+      footer: `<a href="/">견적냥</a>으로 만든 요청 페이지입니다.`,
     }),
   );
 });

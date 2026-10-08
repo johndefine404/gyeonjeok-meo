@@ -1,5 +1,10 @@
 # [Define404] 로컬 시험용 비밀값. 이 파일을 .dev.vars 로 복사해서 채운다 (.dev.vars 는 저장소에 올리지 않는다)
 # 운영에서는 같은 이름으로 npx wrangler secret put <이름> 을 쓴다
 
-# 로그인 링크, 견적 요청·수락 알림 메일 (Resend). 비우면 메일 대신 로그에 찍는다
+# 로그인 링크, 견적 요청·수락 알림 메일. Gmail 세 값과 Resend 키가 모두 없으면 메일 대신 로그에 찍는다
+# 1) Gmail API (Google Workspace): 세 값이 모두 있으면 이것을 쓴다. 범위는 gmail.send 하나만
+GMAIL_CLIENT_ID=
+GMAIL_CLIENT_SECRET=
+GMAIL_REFRESH_TOKEN=
+# 2) Resend: Gmail 값이 없을 때 쓴다
 RESEND_API_KEY=
