@@ -48,7 +48,11 @@ app.use("*", async (c, next) => {
 app.use("*", async (c, next) => {
   if (!["GET", "HEAD", "OPTIONS"].includes(c.req.method)) {
     const o = c.req.header("Origin");
-    if (o && o !== new URL(c.req.url).origin) return c.json({ error: "origin not allowed" }, 403);
+    // Referrer-Policy: no-referrer 때문에 같은 사이트의 폼 전송(로그인 확인, 수신 거부)도 Origin 이 "null" 로 온다.
+    // 이때는 브라우저가 붙이는 Sec-Fetch-Site 로 같은 사이트인지 본다
+    if (o === "null") {
+      if (c.req.header("Sec-Fetch-Site") !== "same-origin") return c.json({ error: "origin not allowed" }, 403);
+    } else if (o && o !== new URL(c.req.url).origin) return c.json({ error: "origin not allowed" }, 403);
   }
   await next();
 });

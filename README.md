@@ -13,7 +13,7 @@
 - 사장님 본인 Cloudflare 무료 계정(Workers, D1)에서 돌아갑니다
 - 오픈소스(MIT)라 누구나 무료로 쓰고 고칠 수 있습니다
 
-상태: v0.1. 로컬에서 시험했고 실제 배포는 아직 하지 않았습니다.
+상태: v0.1. Define404 운영본을 Cloudflare Workers 에 배포해 메일 로그인, 견적서 저장, 공유 링크, 탈퇴까지 실제 화면에서 확인했습니다.
 
 ## 무엇을 하나
 
@@ -89,6 +89,8 @@ npx wrangler deploy
 ```
 
 `wrangler.toml`의 `MAIL_FROM`은 보내는 주소로 바꿉니다 (Gmail API 면 그 Google 계정 주소, Resend 면 등록한 도메인 주소). `PRIVACY_URL`은 내 개인정보 처리방침 주소로 바꿉니다. `DEV_MODE`는 운영에서 반드시 `"0"`입니다.
+
+매일 정리 작업은 cron 트리거를 씁니다. Workers 무료 요금제는 계정당 cron 트리거가 5개까지라, 이미 5개를 쓰는 계정이면 배포는 되지만 cron 등록만 실패합니다. 이때는 다른 Worker 의 cron 을 줄이거나 유료 요금제로 올려야 정리 작업이 돕니다.
 
 운영 주소(`APP_URL`), 실제 `database_id`, 내 도메인 연결(`routes`)은 저장소에 올리지 않는 `wrangler.prod.toml`에 따로 두고 `npx wrangler deploy --config wrangler.prod.toml`로 배포해도 됩니다 (`.gitignore`에 들어 있습니다).
 
