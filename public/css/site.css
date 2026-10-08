@@ -188,4 +188,5 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
   .item-row .f-del { grid-column: 3; grid-row: 1; }
   .item-row .f-qty { grid-column: 1; }
   .item-row .f-price { grid-column: 2 / 4; }
+  .tax-note, .hint { font-size: 14px; } /* 휴대폰에서 안내 문장이 작아 읽기 힘들지 않게 */
 }

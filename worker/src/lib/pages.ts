@@ -1,7 +1,7 @@
 // [Define404] 서버가 그리는 페이지 (공유 견적서, 인쇄용 문서, 견적 요청, 로그인 확인) 공통 틀
 import { esc } from "../../../public/js/core.js";
 
-const PRETENDARD = "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css";
+const PRETENDARD = "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css";
 
 export function page(opts: { title: string; body: string; css?: string[]; js?: string[]; bodyClass?: string; noindex?: boolean }): string {
   const css = ["/css/site.css", ...(opts.css ?? [])].map((h) => `<link rel="stylesheet" href="${h}">`).join("\n");
