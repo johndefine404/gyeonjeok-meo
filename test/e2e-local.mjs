@@ -30,8 +30,8 @@ async function call(path, { method = "GET", token, body, headers = {} } = {}) {
   return { status: res.status, json, text, headers: res.headers };
 }
 
-async function login(email) {
-  const s = await call("/api/auth/start", { method: "POST", body: { email, consentPrivacy: true, consentMarketing: false } });
+async function login(email, consentMarketing = false) {
+  const s = await call("/api/auth/start", { method: "POST", body: { email, consentPrivacy: true, consentMarketing } });
   assert.equal(s.status, 200, s.text);
   assert.ok(s.json.devLink, "DEV_MODE 로그인 링크");
   const t = new URL(s.json.devLink).searchParams.get("t");
@@ -177,6 +177,18 @@ await step("광고 수신 동의: 기본 꺼짐, 켜고 끄기, 처리 결과 �
   assert.equal(off.json.noticeSent, true, "철회도 결과를 알린다");
   const again = await call("/api/me/marketing", { method: "POST", token: B, body: { consent: false } });
   assert.equal(again.json.noticeSent, false, "이미 꺼져 있으면 메일을 다시 보내지 않는다");
+});
+await step("광고 수신 동의(가입 때 체크): 메일 링크로 로그인을 마쳐야 켜진다", async () => {
+  const email = `owner-c-${RUN}@example.com`;
+  const s = await call("/api/auth/start", { method: "POST", body: { email, consentPrivacy: true, consentMarketing: true } });
+  assert.equal(s.status, 200, s.text);
+  const C = await login(email, true);
+  assert.equal((await call("/api/me", { token: C })).json.marketing, true, "로그인을 마치면 켜진다");
+  await call("/api/me/marketing", { method: "POST", token: C, body: { consent: false } });
+  // 남이 C 의 메일 주소로 동의를 체크해 로그인 메일만 요청한다
+  const x = await call("/api/auth/start", { method: "POST", body: { email, consentPrivacy: true, consentMarketing: true } });
+  assert.equal(x.status, 200, x.text);
+  assert.equal((await call("/api/me", { token: C })).json.marketing, false, "링크를 쓰지 않으면 동의가 켜지지 않는다");
 });
 await step("수신 거부 링크: 잘못된 토큰은 404", async () => {
   assert.equal((await call(`/m/off?t=${"x".repeat(43)}`)).status, 404);

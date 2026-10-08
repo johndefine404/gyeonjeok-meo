@@ -2,6 +2,7 @@
 import type { Context, Next } from "hono";
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import type { Account, AppEnv } from "../env";
+import { sendMarketingNotice, setMarketing } from "./marketing";
 import { randomId, sha256, TOKEN_RE } from "./util";
 
 export const COOKIE = "gj_s";
@@ -32,13 +33,13 @@ export function requireAccount(c: Context<AppEnv>): Account | Response {
   return a;
 }
 
-/** 메일 로그인 링크 토큰을 만들고 원문을 돌려준다 */
-export async function createLoginToken(db: D1Database, accountId: string): Promise<string> {
+/** 메일 로그인 링크 토큰을 만들고 원문을 돌려준다. marketing 은 로그인을 마칠 때 기록할 광고 수신 동의(선택) */
+export async function createLoginToken(db: D1Database, accountId: string, marketing = false): Promise<string> {
   const token = randomId(32);
   const now = Date.now();
   await db
-    .prepare("INSERT INTO login_tokens (token_hash, account_id, expires_at, created_at) VALUES (?, ?, ?, ?)")
-    .bind(await sha256(token), accountId, now + LOGIN_MINUTES * 60_000, now)
+    .prepare("INSERT INTO login_tokens (token_hash, account_id, expires_at, created_at, marketing) VALUES (?, ?, ?, ?, ?)")
+    .bind(await sha256(token), accountId, now + LOGIN_MINUTES * 60_000, now, marketing ? 1 : 0)
     .run();
   return token;
 }
@@ -48,10 +49,10 @@ export async function consumeLoginToken(c: Context<AppEnv>, token: string): Prom
   if (!TOKEN_RE.test(token)) return false;
   const now = Date.now();
   const row = await c.env.DB.prepare(
-    "UPDATE login_tokens SET used_at = ? WHERE token_hash = ? AND used_at IS NULL AND expires_at > ? RETURNING account_id",
+    "UPDATE login_tokens SET used_at = ? WHERE token_hash = ? AND used_at IS NULL AND expires_at > ? RETURNING account_id, marketing",
   )
     .bind(now, await sha256(token), now)
-    .first<{ account_id: string }>();
+    .first<{ account_id: string; marketing: number }>();
   if (!row) return false;
   const session = randomId(32);
   await c.env.DB.batch([
@@ -73,6 +74,21 @@ export async function consumeLoginToken(c: Context<AppEnv>, token: string): Prom
     maxAge: SESSION_DAYS * 86_400,
   });
   c.header("X-Session-Token", session); // 명령줄·API 사용자를 위해 (브라우저는 쿠키를 쓴다)
+
+  // 가입·로그인 때 체크한 광고 수신 동의(선택)는 메일 주인이 링크로 로그인을 마친 지금 기록한다.
+  // 다시 체크하면 2년을 새로 센다. 끄기는 내 견적함이나 안내 메일 속 링크로 한다
+  if (row.marketing) {
+    const acc = await c.env.DB.prepare("SELECT id, email FROM accounts WHERE id = ?").bind(row.account_id).first<{ id: string; email: string }>();
+    if (acc) {
+      const at = await setMarketing(c.env.DB, acc.id, true);
+      const p = sendMarketingNotice(c.env, new URL(c.req.url).origin, acc, "consent", at).catch((e) => console.error("marketing notice", e));
+      try {
+        c.executionCtx.waitUntil(p);
+      } catch {
+        /* 시험 환경 */
+      }
+    }
+  }
   return true;
 }
 

@@ -1,0 +1,6 @@
+# [Define404] 정적 화면(편집기, 내 견적함, 스크립트, 서식)에도 Worker 응답과 같은 보안 헤더를 붙인다 (worker/src/index.ts 의 CSP 와 맞춘다)
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net; img-src 'self' data: blob:; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  X-Frame-Options: DENY

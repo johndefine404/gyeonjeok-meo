@@ -56,17 +56,13 @@ api.post("/auth/start", async (c) => {
     .first<{ n: number }>();
   if ((recent?.n ?? 0) >= 5) return c.json({ error: "로그인 메일을 너무 자주 요청했습니다. 잠시 후 다시 시도해 주세요" }, 429);
 
-  const token = await createLoginToken(db, acc.id);
+  // 광고성 정보 수신 동의(선택)는 여기서 바로 켜지 않는다. 메일 주인이 링크로 로그인을 마칠 때 켠다
+  // (남의 메일 주소를 넣어 그 사람의 동의를 켜지 못하게)
+  const token = await createLoginToken(db, acc.id, marketing);
   const link = `${origin(c.req.url)}/auth/verify?t=${token}`;
   const text = `아래 링크를 누르면 로그인됩니다. 20분 동안 한 번만 쓸 수 있습니다.\n\n${link}\n\n요청하지 않았다면 이 메일을 지워 주세요.`;
   await sendMail(c.env, email, `[${c.env.APP_NAME}] 로그인 링크`, text);
 
-  // 광고성 정보 수신 동의(선택)는 체크했을 때만 켠다. 다시 체크하면 2년을 새로 센다.
-  // 끄기는 내 견적함이나 안내 메일 속 링크로 한다 (로그인할 때마다 실수로 철회되지 않게)
-  if (marketing) {
-    const at = await setMarketing(db, acc.id, true);
-    later(c, sendMarketingNotice(c.env, origin(c.req.url), { id: acc.id, email }, "consent", at));
-  }
   const dev = c.env.DEV_MODE === "1" && !c.env.RESEND_API_KEY;
   return c.json({ ok: true, message: "메일로 로그인 링크를 보냈습니다", ...(dev ? { devLink: link } : {}) });
 });
