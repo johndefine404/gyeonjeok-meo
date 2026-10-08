@@ -1,0 +1,145 @@
+<!doctype html>
+<!-- [Define404] gyeonjeok-meo 견적서 편집기 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>견적냥: 견적서 한 장, 가입 없이 바로</title>
+<meta name="description" content="1인 사업자, 소상공인, 프리랜서를 위한 무료 한국형 견적서 생성기. 부가세 별도·포함, 간이과세, 3.3% 원천징수, 한글 금액, A4 인쇄와 PDF 저장, 견적 수락 링크.">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="/css/site.css">
+<link rel="stylesheet" href="/css/doc.css">
+</head>
+<body>
+<header class="site-head no-print">
+  <div class="wrap">
+    <a class="logo" href="/"><img src="/logo.svg" alt="" width="28" height="28">견적냥</a>
+    <nav>
+      <a class="keep" href="/app.html" data-me>내 견적함</a>
+      <a href="https://github.com/johndefine404/gyeonjeok-meo">GitHub</a>
+      <a class="cta" href="https://contact.define404.com" data-cta>설치·맞춤 제작 문의</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="intro no-print">
+    <div>
+      <h1 class="page-h">견적서 한 장, 가입 없이 바로 만듭니다</h1>
+      <p>부가세 별도·포함, 간이과세, 프리랜서 3.3% 원천징수를 계산하고 한글 금액(일금 ○○원정)까지 채웁니다. 인쇄 창에서 PDF로 저장할 수 있습니다. 작성 내용은 이 브라우저에만 저장됩니다.</p>
+    </div>
+    <button class="btn ghost small" type="button" id="reset">새 견적서</button>
+  </section>
+
+  <div class="workspace">
+    <div class="editor no-print" id="editor">
+      <section class="panel">
+        <h2>문서</h2>
+        <div class="body">
+          <label>견적번호<input name="number" maxlength="20"></label>
+          <label>견적일자<input name="date" type="date"></label>
+          <label>유효기한<input name="validUntil" type="date"></label>
+          <label>문서 제목<input name="title" maxlength="60"></label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>세금 계산 방식</h2>
+        <div class="body">
+          <div class="seg full" role="radiogroup" aria-label="과세 유형">
+            <label><input type="radio" name="taxMode" value="general"><span>일반과세</span></label>
+            <label><input type="radio" name="taxMode" value="simple"><span>간이과세</span></label>
+            <label><input type="radio" name="taxMode" value="freelancer"><span>프리랜서 3.3%</span></label>
+          </div>
+          <div class="seg full" role="radiogroup" aria-label="부가세" data-vat>
+            <label><input type="radio" name="vatIncluded" value="0"><span>부가세 별도</span></label>
+            <label><input type="radio" name="vatIncluded" value="1"><span>부가세 포함</span></label>
+          </div>
+          <label>끝수 처리<select name="roundMode"><option value="floor">절사 (버림)</option><option value="round">반올림</option><option value="ceil">절상 (올림)</option></select></label>
+          <label>처리 단위<select name="roundUnit"><option value="1">1원 미만</option><option value="10">10원 미만</option><option value="100">100원 미만</option><option value="1000">1,000원 미만</option></select></label>
+          <p class="tax-note" data-tax-note></p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>공급자 (보내는 쪽)</h2>
+        <div class="body">
+          <label class="full">상호<input name="s.name" maxlength="80" autocomplete="organization"></label>
+          <label>대표자<input name="s.owner" maxlength="40" autocomplete="name"></label>
+          <label>사업자등록번호<input name="s.bizNo" maxlength="12" inputmode="numeric" placeholder="000-00-00000"><span class="hint" data-biz-hint></span></label>
+          <label class="full">주소<input name="s.address" maxlength="160" autocomplete="street-address"></label>
+          <label>연락처<input name="s.phone" maxlength="40" autocomplete="tel"></label>
+          <label>메일<input name="s.email" maxlength="120" type="email" autocomplete="email"></label>
+          <div class="full">
+            <label>직인 이미지 (선택)<input type="file" accept="image/png,image/jpeg,image/webp" data-seal-file></label>
+            <div class="seal-row">
+              <img data-seal-preview alt="" hidden>
+              <button class="btn link" type="button" data-seal-clear hidden>직인 지우기</button>
+              <span class="hint">이 브라우저에만 저장하고 서버로 보내지 않습니다. 공유 링크에는 표시되지 않습니다.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>공급받는자 (받는 쪽)</h2>
+        <div class="body">
+          <label class="full">상호 또는 성명<input name="c.name" maxlength="80"></label>
+          <label>담당자<input name="c.person" maxlength="40"></label>
+          <label>연락처<input name="c.phone" maxlength="40"></label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>품목 <button class="btn ghost small" type="button" id="add-item">품목 추가</button></h2>
+        <div class="items-edit" id="items"></div>
+        <div class="body"><label class="full">비고<textarea name="notes" rows="3" maxlength="1000" placeholder="결제 조건, 납기, 포함·제외 사항"></textarea></label></div>
+      </section>
+
+      <section class="panel" aria-live="polite">
+        <h2>합계</h2>
+        <div class="totals" id="totals"></div>
+        <ul class="errors" id="errors"></ul>
+        <div class="actions">
+          <button class="btn" type="button" id="print">인쇄·PDF 저장</button>
+          <button class="btn ghost" type="button" id="save">공유 링크 만들기</button>
+        </div>
+        <form class="signup card form" id="signup" hidden>
+          <p class="msg"><b>공유 링크와 사업자 정보 저장은 메일 가입 후 쓸 수 있습니다.</b> 비밀번호 없이 메일로 받은 링크로 로그인합니다.</p>
+          <label>메일 주소<input name="email" type="email" required maxlength="254" autocomplete="email"></label>
+          <fieldset class="consent">
+            <legend>개인정보 수집·이용 동의 (필수)</legend>
+            <p>수집 항목: 메일 주소, 사업자 정보, 작성한 견적서 / 목적: 로그인, 견적서 저장·공유, 견적 요청 알림 / 보유 기간: 탈퇴할 때까지. 동의하지 않으면 가입할 수 없고, 가입 없이도 견적서 작성과 인쇄는 할 수 있습니다.</p>
+            <label class="check"><input type="checkbox" name="consentPrivacy" required> 위 내용에 동의합니다</label>
+          </fieldset>
+          <label class="check"><input type="checkbox" name="consentMarketing"> (선택) Define404의 새 기능, 설치·맞춤 제작 안내 메일을 받겠습니다. 언제든 내 견적함에서 끌 수 있습니다.</label>
+          <button class="btn" type="submit">로그인 링크 받기</button>
+          <p class="msg" role="status" data-signup-msg></p>
+        </form>
+        <div class="share-out" id="share-out">
+          <p class="msg good" data-share-msg></p>
+          <div class="copy-row"><input readonly data-share-url aria-label="공유 링크"><button class="btn small" type="button" data-copy>복사</button></div>
+          <p class="hint">받는 분이 링크를 열고 "수락"을 누르면 메일로 알려 드립니다.</p>
+        </div>
+      </section>
+    </div>
+
+    <section class="preview">
+      <div class="preview-head no-print"><span>미리보기 (A4)</span><span data-saved-at></span></div>
+      <div class="sheet-scroll"><div class="sheet" id="sheet"></div></div>
+    </section>
+  </div>
+
+  <section class="define404 no-print">
+    <div>
+      <h2>우리 회사 서버에 설치하거나, 우리 양식으로 고치고 싶다면</h2>
+      <p>이 도구는 오픈소스(MIT)입니다. 직접 설치하기 어렵거나 회사 양식, 결재 흐름, 고객 관리에 맞춘 버전이 필요하면 Define404가 만들어 드립니다.</p>
+    </div>
+    <a class="btn" href="https://contact.define404.com" data-cta>설치·맞춤 제작 문의</a>
+  </section>
+</main>
+<script src="/js/editor.js" type="module"></script>
+</body>
+</html>

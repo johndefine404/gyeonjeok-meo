@@ -1,0 +1,5 @@
+# [Define404] 로컬 시험용 비밀값. 이 파일을 .dev.vars 로 복사해서 채운다 (.dev.vars 는 저장소에 올리지 않는다)
+# 운영에서는 같은 이름으로 npx wrangler secret put <이름> 을 쓴다
+
+# 로그인 링크, 견적 요청·수락 알림 메일 (Resend). 비우면 메일 대신 로그에 찍는다
+RESEND_API_KEY=

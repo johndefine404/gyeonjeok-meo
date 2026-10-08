@@ -1,0 +1,23 @@
+{
+  "name": "gyeonjeok-meo-worker",
+  "private": true,
+  "description": "gyeonjeok-meo: 1인 사업자·소상공인·프리랜서용 한국형 견적서 생성기와 견적 요청 페이지",
+  "author": "Define404 <john@define404.com>",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "db:local": "wrangler d1 migrations apply gyeonjeok-meo --local",
+    "deploy": "wrangler deploy",
+    "types": "wrangler types",
+    "check": "tsc --noEmit",
+    "test": "node --test ../test/*.test.mjs"
+  },
+  "dependencies": {
+    "hono": "^4.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "wrangler": "^4.40.0"
+  }
+}

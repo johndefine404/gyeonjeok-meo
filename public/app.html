@@ -1,0 +1,93 @@
+<!doctype html>
+<!-- [Define404] gyeonjeok-meo 내 견적함: 로그인, 사업자 정보, 견적 요청, 저장한 견적서 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>내 견적함 · 견적냥</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="/css/site.css">
+</head>
+<body>
+<header class="site-head">
+  <div class="wrap">
+    <a class="logo" href="/"><img src="/logo.svg" alt="" width="28" height="28">견적냥</a>
+    <nav>
+      <a class="keep" href="/">편집기</a>
+      <a class="cta" href="https://contact.define404.com" data-cta>설치·맞춤 제작 문의</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="login" class="wrap narrow" hidden>
+    <h1 class="page-h">내 견적함</h1>
+    <p class="sub">메일로 받은 링크로 로그인합니다. 비밀번호는 없습니다. 처음이면 같은 방법으로 가입됩니다.</p>
+    <form class="card form" id="login-form">
+      <label>메일 주소<input name="email" type="email" required maxlength="254" autocomplete="email"></label>
+      <fieldset class="consent">
+        <legend>개인정보 수집·이용 동의 (필수)</legend>
+        <p>수집 항목: 메일 주소, 사업자 정보, 작성한 견적서, 받은 견적 요청 / 목적: 로그인, 견적서 저장·공유, 견적 요청 알림 / 보유 기간: 탈퇴할 때까지. 동의하지 않으면 가입할 수 없습니다. 가입 없이도 견적서 작성과 인쇄는 할 수 있습니다.</p>
+        <label class="check"><input type="checkbox" name="consentPrivacy" required> 위 내용에 동의합니다</label>
+      </fieldset>
+      <label class="check"><input type="checkbox" name="consentMarketing"> (선택) Define404의 새 기능, 설치·맞춤 제작 안내 메일을 받겠습니다. 언제든 끌 수 있습니다.</label>
+      <button class="btn" type="submit">로그인 링크 받기</button>
+      <p class="msg" role="status" data-login-msg></p>
+    </form>
+  </section>
+
+  <div id="dash" hidden>
+    <div class="intro">
+      <div><p class="eyebrow" data-email></p><h1 class="page-h">내 견적함</h1></div>
+      <a class="btn" href="/">새 견적서 쓰기</a>
+    </div>
+    <div class="dash">
+      <section class="card">
+        <h2>견적 요청 페이지</h2>
+        <div data-req-link></div>
+      </section>
+
+      <section class="card">
+        <h2>사업자 정보</h2>
+        <form class="form" id="biz-form">
+          <div class="grid2">
+            <label class="full">상호<input name="name" required maxlength="80"></label>
+            <label>대표자<input name="owner" maxlength="40"></label>
+            <label>사업자등록번호<input name="bizNo" maxlength="12" inputmode="numeric"></label>
+            <label class="full">주소<input name="address" maxlength="160"></label>
+            <label>연락처<input name="phone" maxlength="40"></label>
+            <label>메일<input name="email" type="email" maxlength="120"></label>
+            <label class="full">알림 받을 메일 (비우면 가입 메일)<input name="notifyEmail" type="email" maxlength="254"></label>
+            <label class="full">견적 요청 페이지 소개 문구<textarea name="intro" rows="2" maxlength="500"></textarea></label>
+          </div>
+          <button class="btn" type="submit">저장</button>
+          <p class="msg" role="status" data-biz-msg></p>
+        </form>
+      </section>
+
+      <section class="card wide">
+        <h2>받은 견적 요청</h2>
+        <ul class="list" id="requests"></ul>
+      </section>
+
+      <section class="card wide">
+        <h2>저장한 견적서</h2>
+        <ul class="list" id="quotes"></ul>
+      </section>
+
+      <section class="card wide">
+        <h2>계정</h2>
+        <div class="form">
+          <label class="check"><input type="checkbox" id="marketing"> (선택) Define404 안내 메일 받기</label>
+          <div class="row-actions"><button class="btn ghost small" type="button" id="logout">로그아웃</button><button class="btn danger small" type="button" id="delete">탈퇴하고 모든 정보 지우기</button></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+<script src="/js/app.js" type="module"></script>
+</body>
+</html>

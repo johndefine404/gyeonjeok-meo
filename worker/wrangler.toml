@@ -1,0 +1,30 @@
+# [Define404] gyeonjeok-meo Worker 설정
+name = "gyeonjeok-meo"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+
+# 편집기, 내 견적함, 문서 서식(CSS), 화면 스크립트
+[assets]
+directory = "../public"
+
+# 계정, 사업자 정보, 견적서, 견적 요청
+# 설치할 때 npx wrangler d1 create gyeonjeok-meo 로 만든 database_id 로 바꾼다
+[[d1_databases]]
+binding = "DB"
+database_name = "gyeonjeok-meo"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+# 접속자 한 명당 1분에 30번까지
+[[ratelimits]]
+name = "LIMITER"
+namespace_id = "2001"
+simple = { limit = 30, period = 60 }
+
+[vars]
+APP_NAME = "견적냥"
+# 설치·맞춤 제작 문의 버튼이 여는 주소
+CTA_URL = "https://contact.define404.com"
+MAIL_FROM = "견적냥 <onboarding@resend.dev>"
+# 1이면 메일 키가 없을 때 로그인 링크를 응답에 담는다. 로컬 시험 전용, 운영에서는 반드시 0
+DEV_MODE = "0"
