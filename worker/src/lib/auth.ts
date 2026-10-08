@@ -15,7 +15,7 @@ export async function loadAccount(c: Context<AppEnv>, next: Next) {
   let account: Account | null = null;
   if (token && TOKEN_RE.test(token)) {
     const row = await c.env.DB.prepare(
-      `SELECT a.id, a.email, a.marketing_consent FROM sessions s JOIN accounts a ON a.id = s.account_id
+      `SELECT a.id, a.email, a.marketing_consent, a.marketing_consent_at FROM sessions s JOIN accounts a ON a.id = s.account_id
        WHERE s.token_hash = ? AND s.expires_at > ?`,
     )
       .bind(await sha256(token), Date.now())

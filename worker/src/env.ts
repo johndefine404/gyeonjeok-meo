@@ -6,6 +6,8 @@ export interface Env {
 
   APP_NAME: string;
   CTA_URL: string;
+  OPERATOR_NAME: string;
+  APP_URL?: string;
   MAIL_FROM: string;
   DEV_MODE?: string;
 
@@ -16,6 +18,7 @@ export type Account = {
   id: string;
   email: string;
   marketing_consent: number;
+  marketing_consent_at: string | null;
 };
 
 export type Vars = { account: Account | null };

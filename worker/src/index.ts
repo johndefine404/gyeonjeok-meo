@@ -1,8 +1,9 @@
 // [Define404] gyeonjeok-meo: 1인 사업자·소상공인·프리랜서용 한국형 견적서 생성기와 견적 요청 페이지
 // 정적 화면(편집기, 내 견적함)은 ../public 에서 나가고, 이 Worker 는 API 와 공유·요청 페이지를 맡는다.
 import { Hono } from "hono";
-import type { AppEnv } from "./env";
+import type { AppEnv, Env } from "./env";
 import { loadAccount } from "./lib/auth";
+import { dailyCleanup } from "./lib/marketing";
 import { notFoundPage } from "./lib/pages";
 import api from "./routes/api";
 import pages from "./routes/pages";
@@ -28,8 +29,8 @@ app.use("*", async (c, next) => {
   c.header("X-Content-Type-Options", "nosniff");
   c.header("Referrer-Policy", "no-referrer");
   c.header("X-Frame-Options", "DENY");
-  if (c.req.path.startsWith("/api/") || c.req.path.startsWith("/auth/")) c.header("Cache-Control", "no-store");
-  if (/^\/(q|r|auth)\//.test(c.req.path)) c.header("X-Robots-Tag", "noindex, nofollow");
+  if (/^\/(api|auth|m)\//.test(c.req.path)) c.header("Cache-Control", "no-store");
+  if (/^\/(q|r|auth|m)\//.test(c.req.path)) c.header("X-Robots-Tag", "noindex, nofollow");
 });
 
 // 접속자별 요청 제한
@@ -63,4 +64,10 @@ app.onError((err, c) => {
   return c.json({ error: "잠시 후 다시 시도해 주세요" }, 500);
 });
 
-export default app;
+export default {
+  fetch: app.fetch,
+  // 매일 정리: 보관 기간이 지난 견적 요청·미인증 가입 정보 삭제, 2년 지난 광고 수신 동의 끄기 (wrangler.toml [triggers])
+  async scheduled(_ctrl: ScheduledController, env: Env, ctx: ExecutionContext) {
+    ctx.waitUntil(dailyCleanup(env));
+  },
+};

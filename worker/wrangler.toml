@@ -21,8 +21,16 @@ name = "LIMITER"
 namespace_id = "2001"
 simple = { limit = 30, period = 60 }
 
+# 매일 한국 시간 오전 10시: 보관 기간이 지난 견적 요청과 미인증 가입 정보 삭제, 2년 지난 광고 수신 동의 끄기
+[triggers]
+crons = ["0 1 * * *"]
+
 [vars]
 APP_NAME = "견적냥"
+# 광고성 정보 수신 동의를 받는 곳이자 동의 처리 결과 메일의 보낸 곳 (문의처는 CTA_URL)
+OPERATOR_NAME = "Define404"
+# 운영 주소 (예: https://quote.example.com). 정기 작업이 보내는 메일의 링크에 쓴다. 비우면 링크 없이 보낸다
+APP_URL = ""
 # 설치·맞춤 제작 문의 버튼이 여는 주소
 CTA_URL = "https://contact.define404.com"
 MAIL_FROM = "견적냥 <onboarding@resend.dev>"

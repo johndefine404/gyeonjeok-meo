@@ -164,6 +164,31 @@ await step("가입 없이 인쇄용 문서 렌더", async () => {
   assert.ok(r.text.includes("&lt;script&gt;"));
   assert.ok(!r.text.includes("<script>alert(1)"));
 });
+await step("광고 수신 동의: 기본 꺼짐, 켜고 끄기, 처리 결과 메일", async () => {
+  const me = await call("/api/me", { token: B });
+  assert.equal(me.json.marketing, false, "체크하지 않으면 꺼져 있다");
+  const on = await call("/api/me/marketing", { method: "POST", token: B, body: { consent: true } });
+  assert.equal(on.json.marketing, true);
+  assert.equal(on.json.noticeSent, true);
+  assert.ok(on.json.marketingAt);
+  assert.equal((await call("/api/me", { token: B })).json.marketing, true);
+  const off = await call("/api/me/marketing", { method: "POST", token: B, body: { consent: false } });
+  assert.equal(off.json.marketing, false);
+  assert.equal(off.json.noticeSent, true, "철회도 결과를 알린다");
+  const again = await call("/api/me/marketing", { method: "POST", token: B, body: { consent: false } });
+  assert.equal(again.json.noticeSent, false, "이미 꺼져 있으면 메일을 다시 보내지 않는다");
+});
+await step("수신 거부 링크: 잘못된 토큰은 404", async () => {
+  assert.equal((await call(`/m/off?t=${"x".repeat(43)}`)).status, 404);
+  assert.equal((await call("/m/off")).status, 404);
+});
+await step("동의 문구: 목적, 항목, 보유 기간, 거부권", async () => {
+  const r = await call(`/r/${slug}`);
+  for (const s of ["수집 목적", "수집 항목", "보유·이용 기간", "동의하지 않으셔도 됩니다"]) assert.ok(r.text.includes(s), s);
+  const idx = await call("/");
+  for (const s of ["수집 목적", "보유·이용 기간", "광고성 정보 수신 동의 (선택)", "동의하지 않으셔도 견적냥의 모든 기능"]) assert.ok(idx.text.includes(s), s);
+  assert.ok(!/name="consentMarketing"[^>]*checked/.test(idx.text), "광고 동의는 기본으로 체크되어 있지 않다");
+});
 await step("없는 요청 페이지 404", async () => {
   assert.equal((await call("/r/zzzzzzzzzz")).status, 404);
 });

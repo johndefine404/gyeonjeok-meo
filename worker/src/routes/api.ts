@@ -3,7 +3,9 @@ import { Hono } from "hono";
 import type { AppEnv, Env } from "../env";
 import { calcQuote, checkQuote, digitsOnly, normalizeQuote, renderQuoteHtml, validateBizNo, won } from "../../../public/js/core.js";
 import { createLoginToken, logout, requireAccount } from "../lib/auth";
+import { marketingActive } from "../lib/consent";
 import { sendMail } from "../lib/mail";
+import { sendMarketingNotice, setMarketing } from "../lib/marketing";
 import { page } from "../lib/pages";
 import { clean, EMAIL_RE, ID_RE, kstText, kstYmd, nowIso, randomId, randomSlug, sha256, SLUG_RE } from "../lib/util";
 
@@ -36,19 +38,15 @@ api.post("/auth/start", async (c) => {
   const now = nowIso();
   const db = c.env.DB;
 
-  let acc = await db.prepare("SELECT id, marketing_consent FROM accounts WHERE email = ?").bind(email).first<{ id: string; marketing_consent: number }>();
+  let acc = await db.prepare("SELECT id FROM accounts WHERE email = ?").bind(email).first<{ id: string }>();
   if (!acc) {
-    acc = { id: randomId(), marketing_consent: marketing ? 1 : 0 };
+    acc = { id: randomId() };
     await db
-      .prepare("INSERT INTO accounts (id, email, privacy_consent_at, marketing_consent, marketing_consent_at, created_at) VALUES (?, ?, ?, ?, ?, ?)")
-      .bind(acc.id, email, now, marketing ? 1 : 0, marketing ? now : null, now)
+      .prepare("INSERT INTO accounts (id, email, privacy_consent_at, marketing_consent, created_at) VALUES (?, ?, ?, 0, ?)")
+      .bind(acc.id, email, now, now)
       .run();
   } else {
     await db.prepare("UPDATE accounts SET privacy_consent_at = ? WHERE id = ?").bind(now, acc.id).run();
-    // 수신 동의는 체크했을 때만 켠다. 끄기는 내 견적함에서 따로 한다 (로그인할 때마다 실수로 철회되지 않게)
-    if (marketing && !acc.marketing_consent) {
-      await db.prepare("UPDATE accounts SET marketing_consent = 1, marketing_consent_at = ? WHERE id = ?").bind(now, acc.id).run();
-    }
   }
 
   // 같은 메일로 1시간에 5번까지
@@ -62,6 +60,13 @@ api.post("/auth/start", async (c) => {
   const link = `${origin(c.req.url)}/auth/verify?t=${token}`;
   const text = `아래 링크를 누르면 로그인됩니다. 20분 동안 한 번만 쓸 수 있습니다.\n\n${link}\n\n요청하지 않았다면 이 메일을 지워 주세요.`;
   await sendMail(c.env, email, `[${c.env.APP_NAME}] 로그인 링크`, text);
+
+  // 광고성 정보 수신 동의(선택)는 체크했을 때만 켠다. 다시 체크하면 2년을 새로 센다.
+  // 끄기는 내 견적함이나 안내 메일 속 링크로 한다 (로그인할 때마다 실수로 철회되지 않게)
+  if (marketing) {
+    const at = await setMarketing(db, acc.id, true);
+    later(c, sendMarketingNotice(c.env, origin(c.req.url), { id: acc.id, email }, "consent", at));
+  }
   const dev = c.env.DEV_MODE === "1" && !c.env.RESEND_API_KEY;
   return c.json({ ok: true, message: "메일로 로그인 링크를 보냈습니다", ...(dev ? { devLink: link } : {}) });
 });
@@ -108,15 +113,26 @@ api.get("/me", async (c) => {
   const a = c.get("account");
   if (!a) return c.json({ login: false });
   const b = await bizOf(c.env, a.id);
-  return c.json({ login: true, email: a.email, marketing: Boolean(a.marketing_consent), business: b ? bizJson(b, origin(c.req.url)) : null });
+  const marketing = marketingActive(a.marketing_consent, a.marketing_consent_at);
+  return c.json({
+    login: true,
+    email: a.email,
+    marketing,
+    marketingAt: marketing ? a.marketing_consent_at : null,
+    business: b ? bizJson(b, origin(c.req.url)) : null,
+  });
 });
 
 api.post("/me/marketing", async (c) => {
   const a = requireAccount(c);
   if (a instanceof Response) return a;
   const on = (await body(c))?.consent === true;
-  await c.env.DB.prepare("UPDATE accounts SET marketing_consent = ?, marketing_consent_at = ? WHERE id = ?").bind(on ? 1 : 0, nowIso(), a.id).run();
-  return c.json({ ok: true, marketing: on });
+  const was = marketingActive(a.marketing_consent, a.marketing_consent_at);
+  const at = await setMarketing(c.env.DB, a.id, on);
+  // 동의하거나 철회하면 처리 결과를 메일로 알린다 (정보통신망법 50조 7항)
+  const notice = on || was;
+  if (notice) later(c, sendMarketingNotice(c.env, origin(c.req.url), a, on ? "consent" : "withdraw", at));
+  return c.json({ ok: true, marketing: on, marketingAt: on ? at : null, noticeSent: notice });
 });
 
 // 탈퇴: 계정, 사업자 정보, 견적서, 견적 요청을 모두 지운다

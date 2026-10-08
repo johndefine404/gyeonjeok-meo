@@ -111,10 +111,18 @@
           <label>메일 주소<input name="email" type="email" required maxlength="254" autocomplete="email"></label>
           <fieldset class="consent">
             <legend>개인정보 수집·이용 동의 (필수)</legend>
-            <p>수집 항목: 메일 주소, 사업자 정보, 작성한 견적서 / 목적: 로그인, 견적서 저장·공유, 견적 요청 알림 / 보유 기간: 탈퇴할 때까지. 동의하지 않으면 가입할 수 없고, 가입 없이도 견적서 작성과 인쇄는 할 수 있습니다.</p>
+            <p>수집 목적: 로그인, 견적서 저장·공유, 견적 요청·수락 알림 메일</p>
+            <p>수집 항목: 메일 주소, 사업자 정보(상호, 대표자, 사업자등록번호, 주소, 연락처), 작성한 견적서, 받은 견적 요청</p>
+            <p>보유·이용 기간: 탈퇴할 때까지. 탈퇴하면 바로 모두 지웁니다. 7일 안에 메일 링크로 로그인을 마치지 않으면 메일 주소를 지웁니다. 받은 견적 요청은 접수일로부터 1년이 지나면 자동으로 지웁니다</p>
+            <p>동의하지 않으셔도 됩니다. 다만 동의하지 않으면 가입과 공유 링크, 사업자 정보 저장, 견적 요청 페이지를 쓸 수 없습니다. 가입 없이도 견적서 작성과 인쇄는 할 수 있습니다.</p>
             <label class="check"><input type="checkbox" name="consentPrivacy" required> 위 내용에 동의합니다</label>
           </fieldset>
-          <label class="check"><input type="checkbox" name="consentMarketing"> (선택) Define404의 새 기능, 설치·맞춤 제작 안내 메일을 받겠습니다. 언제든 내 견적함에서 끌 수 있습니다.</label>
+          <fieldset class="consent">
+            <legend>광고성 정보 수신 동의 (선택)</legend>
+            <p>목적: Define404의 새 기능, 설치·맞춤 제작 안내 메일 발송 / 항목: 메일 주소 / 보유·이용 기간: 동의를 철회하거나 탈퇴할 때까지. 동의한 날부터 2년이 지나면 자동으로 꺼집니다</p>
+            <p>동의하지 않으셔도 견적냥의 모든 기능을 똑같이 쓸 수 있습니다. 동의하거나 철회하면 처리 결과를 메일로 알려 드리고, 언제든 내 견적함이나 메일 속 링크로 끌 수 있습니다. 광고 메일은 밤 9시부터 아침 8시 사이에는 보내지 않습니다.</p>
+            <label class="check"><input type="checkbox" name="consentMarketing"> 광고성 정보 메일 수신에 동의합니다</label>
+          </fieldset>
           <button class="btn" type="submit">로그인 링크 받기</button>
           <p class="msg" role="status" data-signup-msg></p>
         </form>

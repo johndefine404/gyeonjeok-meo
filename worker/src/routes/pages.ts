@@ -1,8 +1,10 @@
 // [Define404] 서버가 그리는 페이지: 공유 견적서, 인쇄용 문서, 견적 요청, 로그인 확인
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import type { AppEnv } from "../env";
 import { esc, normalizeQuote, renderQuoteHtml } from "../../../public/js/core.js";
 import { consumeLoginToken } from "../lib/auth";
+import { marketingActive } from "../lib/consent";
+import { sendMarketingNotice, setMarketing } from "../lib/marketing";
 import { notFoundPage, page } from "../lib/pages";
 import { ID_RE, kstText, SLUG_RE, TOKEN_RE } from "../lib/util";
 import { printPage } from "./api";
@@ -35,6 +37,7 @@ pages.get("/q/:id", async (c) => {
   <label>수락하는 분 성함 (선택)<input name="name" maxlength="40" autocomplete="name"></label>
   <button class="btn" type="submit">이 견적으로 수락</button>
   <p class="sub small">수락을 누르면 ${esc(q.supplier.name)}에 수락 시각이 전달됩니다. 계약이나 결제가 진행되지는 않습니다.</p>
+  <p class="sub small">성함은 적지 않아도 수락할 수 있습니다. 적으시면 수락 기록으로 이 견적서와 함께 보관되고, ${esc(q.supplier.name)}이(가) 견적서를 지우거나 탈퇴할 때 함께 지워집니다.</p>
   <p class="msg" role="status"></p>
 </form>`;
   return c.html(
@@ -85,7 +88,11 @@ pages.get("/r/:slug", async (c) => {
     <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
     <fieldset class="consent">
       <legend>개인정보 수집·이용 동의 (필수)</legend>
-      <p>수집 항목: 이름, 연락처, 요청 내용 / 목적: 견적 상담과 회신 / 받는 곳: ${esc(b.name)} / 보유 기간: 상담이 끝나면 ${esc(b.name)}이(가) 지웁니다. 동의하지 않으면 요청을 보낼 수 없습니다.</p>
+      <p>수집 목적: 견적 상담과 회신</p>
+      <p>수집 항목: 이름 또는 회사명, 연락처, 요청 내용. 요청 남용을 막으려고 접속 IP는 원문이 아닌 해시값으로만 둡니다</p>
+      <p>받는 곳: ${esc(b.name)}</p>
+      <p>보유·이용 기간: 접수일로부터 1년이 지나면 자동으로 지웁니다. 그 전에도 ${esc(b.name)}이(가) 지우거나 탈퇴하면 바로 지웁니다</p>
+      <p>동의하지 않으셔도 됩니다. 다만 동의하지 않으면 이 페이지로 견적 요청을 보낼 수 없습니다.</p>
       <label class="check"><input type="checkbox" name="consent" required> 위 내용에 동의합니다</label>
     </fieldset>
     <button class="btn" type="submit">견적 요청 보내기</button>
@@ -96,6 +103,36 @@ pages.get("/r/:slug", async (c) => {
     }),
   );
 });
+
+// 광고 수신 거부 링크 (안내 메일 속). 누르면 바로 꺼진다. 비용·로그인 없이 한 번에 끝나야 한다 (정보통신망법 50조 4~6항)
+async function marketingOff(c: Context<AppEnv>) {
+  const t = c.req.query("t") ?? "";
+  const acc = TOKEN_RE.test(t)
+    ? await c.env.DB.prepare("SELECT id, email, marketing_consent, marketing_consent_at FROM accounts WHERE unsub_token = ?")
+        .bind(t)
+        .first<{ id: string; email: string; marketing_consent: number; marketing_consent_at: string | null }>()
+    : null;
+  if (!acc) return c.html(notFoundPage("수신 거부 링크가 올바르지 않습니다. 탈퇴했다면 이미 모든 정보가 지워졌습니다"), 404);
+  if (marketingActive(acc.marketing_consent, acc.marketing_consent_at)) {
+    const at = await setMarketing(c.env.DB, acc.id, false);
+    const p = sendMarketingNotice(c.env, new URL(c.req.url).origin, acc, "withdraw", at).catch((e) => console.error("marketing notice", e));
+    try {
+      c.executionCtx.waitUntil(p);
+    } catch {
+      /* 시험 환경 */
+    }
+  }
+  return c.html(
+    page({
+      title: "광고 수신 거부",
+      body: `<main class="wrap narrow"><h1 class="page-h">광고성 정보 수신을 껐습니다</h1>
+<p class="sub">${esc(acc.email)} 주소로 ${esc(c.env.OPERATOR_NAME || "Define404")}의 광고 메일을 더 보내지 않습니다. 처리 결과는 메일로도 알려 드립니다. 로그인, 견적 요청·수락 알림 메일은 그대로 갑니다.</p>
+<p><a class="btn ghost" href="/app.html">내 견적함</a></p></main>`,
+    }),
+  );
+}
+pages.get("/m/off", marketingOff);
+pages.post("/m/off", marketingOff);
 
 // 메일 링크를 열면 버튼을 한 번 더 누르게 한다 (메일 보안 검사기가 링크를 미리 열어 토큰을 써 버리지 않게)
 pages.get("/auth/verify", (c) => {

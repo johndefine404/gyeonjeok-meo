@@ -117,7 +117,16 @@ document.addEventListener("click", async (e) => {
   }
 });
 
-$("#marketing").addEventListener("change", (e) => api("/api/me/marketing", { method: "POST", body: JSON.stringify({ consent: e.target.checked }) }));
+$("#marketing").addEventListener("change", async (e) => {
+  const msg = $("[data-marketing-msg]");
+  try {
+    const d = await api("/api/me/marketing", { method: "POST", body: JSON.stringify({ consent: e.target.checked }) });
+    msg.textContent = `${d.marketing ? `광고성 정보 수신에 동의했습니다 (${when(d.marketingAt)})` : "광고성 정보 수신을 껐습니다"}. ${d.noticeSent ? "처리 결과를 메일로 보냈습니다." : ""}`;
+  } catch (err) {
+    e.target.checked = !e.target.checked;
+    msg.textContent = err.message;
+  }
+});
 $("#logout").addEventListener("click", async () => {
   await api("/api/auth/logout", { method: "POST" });
   location.href = "/";
