@@ -2,6 +2,10 @@
 
 [Define404]
 
+바로 써 보기: https://gyeonjeok.define404.com
+
+![견적냥 화면](docs/screenshot.png)
+
 <img src="public/logo.svg" width="72" height="72" alt="견적냥 로고">
 
 견적서 한 장, 가입 없이 바로.
