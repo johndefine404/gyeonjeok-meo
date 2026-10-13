@@ -16,7 +16,7 @@ const CSP = [
   "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
   "font-src 'self' https://cdn.jsdelivr.net",
   "img-src 'self' data: blob:",
-  "connect-src 'self'",
+  "connect-src 'self' https://pulse.astorage9909.workers.dev",
   "form-action 'self'",
   "base-uri 'none'",
   "frame-ancestors 'none'",
