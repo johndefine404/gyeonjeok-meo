@@ -3,6 +3,7 @@ export interface Env {
   DB: D1Database;
   ASSETS: Fetcher;
   LIMITER?: RateLimit;
+  CRON_SECRET?: string; // define404-slack 워커가 /__cron 을 부를 때 쓰는 비밀값
 
   APP_NAME: string;
   CTA_URL: string;

@@ -23,7 +23,7 @@ simple = { limit = 30, period = 60 }
 
 # 매일 한국 시간 오전 10시: 보관 기간이 지난 견적 요청과 미인증 가입 정보 삭제, 2년 지난 광고 수신 동의 끄기
 [triggers]
-crons = ["0 1 * * *"]
+crons = [] # 정기 실행은 define404-slack 워커가 /__cron 으로 대신 부른다
 
 [vars]
 APP_NAME = "견적냥"
