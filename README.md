@@ -194,7 +194,7 @@ node ../test/e2e-local.mjs http://localhost:8787
 
 ## 만든 곳
 
-[Define404](https://contact.define404.com) · JohnLKim
+[Define404](https://contact.define404.com) · JohnKim
 
 자기 서버에 설치하기, 회사 양식에 맞춘 견적서, 결재·고객 관리 연동이 필요하면 Define404에 문의해 주세요: https://contact.define404.com
 
